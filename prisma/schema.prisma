@@ -1,0 +1,476 @@
+generator clients {
+  provider = "prisma-client"
+  output   = "./generated"
+}
+
+datasource dbs {
+  provider = "postgresql"
+}
+
+enum Role {
+  BUYER
+  SELLER
+  EMPLOYEE
+}
+
+model User {
+  id                  String    @id @default(cuid())
+  name                String?
+  email               String    @unique
+  password            String? // Diisi jika menggunakan login email manual
+  image               String? // URL foto profil dari Google Auth / Cloudinary
+  role                Role      @default(BUYER)
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+  deletedAt           DateTime? // Soft delete (user dihapus tapi masih ada di database)
+  resetPasswordToken  String?   @unique
+  resetPasswordExpiry DateTime?
+
+  // Relasi
+  carts            Cart[] // Keranjang belanja user
+  orders           Order[] // Riwayat transaksi user
+  buyerProfile     BuyerProfile?
+  storeProfile     StoreProfile?
+  employeeProfile  EmployeeProfile?
+  productHistories ProductHistory[]
+  stockMovements   StockMovement[]
+  notifications    Notification[]
+  productReviews   ProductReview[]
+
+  @@map("users") // Mengubah nama tabel di database menjadi plural
+}
+
+model BuyerProfile {
+  id        String  @id @default(cuid())
+  userId    String  @unique
+  user      User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone     String?
+  avatarUrl String?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasi One-to-Many ke Alamat Pembeli
+  addresses Address[]
+
+  @@map("buyer_profiles")
+}
+
+model Address {
+  id             String @id @default(cuid())
+  buyerProfileId String
+
+  label         String // Contoh: "Rumah", "Kantor", "Kos"
+  receiverName  String // Nama penerima paket
+  receiverPhone String // No HP penerima paket
+
+  // Struktur granular alamat (untuk integrasi kurir)
+  province      String
+  city          String
+  cityId        String? // ID Kota dari RajaOngkir
+  district      String // Kecamatan
+  districtId    String? // ID Kecamatan dari RajaOngkir
+  village       String // Kelurahan / Desa
+  villageId     String? // ID Kelurahan / Desa dari RajaOngkir
+  postcode      String // Kode Pos
+  streetAddress String // Detail alamat jalan, nomor rumah, patokan
+
+  // Koordinat GPS untuk Pinpoint Peta (kurir instan/perhitungan Haversine)
+  latitude  Float?
+  longitude Float?
+
+  // Penanda alamat utama
+  isDefault Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasi
+  buyerProfile BuyerProfile @relation(fields: [buyerProfileId], references: [id], onDelete: Cascade)
+
+  @@map("addresses")
+}
+
+// ==========================================
+// PROFIL TOKO (SELLER PROFILE) & GUDANG
+// ==========================================
+model StoreProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  storeName        String  @unique
+  storeDescription String?
+  logoUrl          String?
+
+  // Pengaturan Escrow & Midtrans (SaaS Model)
+  midtransServerKey String? // Enkripsi di backend saat disimpan
+  midtransClientKey String? // Enkripsi di backend saat disimpan
+
+  // Relasi One-to-Many ke Gudang Toko (Multi-Warehouse)
+  warehouses Warehouse[]
+
+  // Relasi ke Produk
+  products Product[]
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete (toko dihapus tapi masih ada di database)
+
+  // Relasi ke Dompet Toko
+  wallet StoreWallet?
+
+  // Karyawan toko
+  employees EmployeeProfile[]
+
+  @@map("store_profiles")
+}
+
+model EmployeeProfile {
+  id     String @id @default(cuid())
+  userId String @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  storeProfileId String
+  storeProfile   StoreProfile @relation(fields: [storeProfileId], references: [id], onDelete: Cascade)
+
+  // Gudang yang ditangani (Bisa lebih dari 1)
+  warehouses Warehouse[]
+
+  // Hak Akses (Permissions)
+  canManageProducts  Boolean @default(false)
+  canManageOrders    Boolean @default(false)
+  canManageCustomers Boolean @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("employee_profiles")
+}
+
+model Warehouse {
+  id             String @id @default(cuid())
+  storeProfileId String
+
+  warehouseName String // Contoh: "Gudang Utama", "Gudang Cabang Bandung"
+
+  // Alamat fisik Gudang
+  province      String
+  city          String
+  cityId        String? // ID Kota dari RajaOngkir
+  district      String
+  districtId    String?
+  village       String
+  villageId     String?
+  postcode      String
+  streetAddress String
+
+  // Koordinat GPS untuk perhitungan Haversine (Jarak Terdekat)
+  latitude  Float
+  longitude Float
+
+  // Fallback System (Gudang Utama)
+  isMain Boolean @default(false)
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  deletedAt DateTime? // Soft delete (gudang dihapus tapi masih ada di database)
+
+  // Relasi ke tabel stok produk di gudang ini
+  storeProfile StoreProfile    @relation(fields: [storeProfileId], references: [id], onDelete: Cascade)
+  stocks       ProductStock[]
+  shipments    OrderShipment[]
+
+  // Karyawan yang mengelola gudang ini
+  employees EmployeeProfile[]
+
+  stockMovementsFrom StockMovement[] @relation("FromWarehouse")
+  stockMovementsTo   StockMovement[] @relation("ToWarehouse")
+
+  @@map("warehouses")
+}
+
+// ==========================================
+// DOMPET TOKO (LOCAL ESCROW SYSTEM)
+// ==========================================
+model StoreWallet {
+  id             String @id @default(cuid())
+  storeProfileId String @unique
+
+  escrowBalance       Float @default(0.0) // Ditahan sistem
+  withdrawableBalance Float @default(0.0) // Siap ditarik seller
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relasi
+  storeProfile StoreProfile @relation(fields: [storeProfileId], references: [id], onDelete: Cascade)
+
+  @@map("store_wallets")
+}
+
+// MANAJEMEN PRODUK & STOK
+model Category {
+  id        String    @id @default(cuid())
+  name      String // Contoh: "Outerwear", "T-Shirt", "Celana"
+  slug      String    @unique
+  products  Product[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  @@map("categories")
+}
+
+// Tabel perantara stok produk per gudang
+model ProductStock {
+  id          String   @id @default(cuid())
+  productId   String
+  warehouseId String
+  size        String   @default("ALL")
+  qty         Int      @default(0) // Jumlah stok di gudang ini
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Relasi
+  warehouse Warehouse @relation(fields: [warehouseId], references: [id], onDelete: Cascade)
+  product   Product   @relation(fields: [productId], references: [id], onDelete: Cascade)
+
+  @@unique([productId, warehouseId, size]) // Kombinasi produk, gudang, dan size harus unik
+  @@map("product_stocks")
+}
+
+enum ProductStatus {
+  DRAFT // Product is being created by the seller and is not yet visible to the public
+  ACTIVE // Product is live and available for buyers to purchase
+  ARCHIVED // Product is discontinued; preserved to maintain historical transaction records
+  BLOCKED // Product is suspended by the admin due to policy violations
+}
+
+model Product {
+  id             String        @id @default(cuid())
+  name           String
+  slug           String        @unique
+  description    String        @dbs.Text
+  price          Int
+  weight         Int?
+  images         String[]
+  isFeatured     Boolean       @default(false)
+  status         ProductStatus @default(DRAFT) // Using enum for comprehensive product lifecycle management
+  categoryId     String
+  storeProfileId String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  deletedAt      DateTime? // Soft delete timestamp
+
+  // Relations
+  category       Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  cartItems      CartItem[]
+  orderItems     OrderItem[]
+  stocks         ProductStock[]
+  histories      ProductHistory[]
+  stockMovements StockMovement[]
+  storeProfile   StoreProfile?    @relation(fields: [storeProfileId], references: [id], onDelete: Cascade)
+  productReviews ProductReview[]
+
+  @@map("products")
+}
+
+model ProductHistory {
+  id        String   @id @default(cuid())
+  productId String
+  product   Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  action    String // "CREATED", "UPDATED", "ARCHIVED"
+  createdAt DateTime @default(now())
+
+  @@map("product_histories")
+}
+
+model StockMovement {
+  id              String   @id @default(cuid())
+  productId       String
+  size            String   @default("ALL")
+  fromWarehouseId String?
+  toWarehouseId   String?
+  qty             Int
+  userId          String
+  reason          String?
+  createdAt       DateTime @default(now())
+
+  product       Product    @relation(fields: [productId], references: [id], onDelete: Cascade)
+  fromWarehouse Warehouse? @relation("FromWarehouse", fields: [fromWarehouseId], references: [id], onDelete: SetNull)
+  toWarehouse   Warehouse? @relation("ToWarehouse", fields: [toWarehouseId], references: [id], onDelete: SetNull)
+  user          User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("stock_movements")
+}
+
+// SISTEM KERANJANG BELANJA (CART)
+// Disimpan di database agar keranjang pembeli tidak hilang saat pindah perangkat
+model Cart {
+  id        String   @id @default(cuid())
+  userId    String   @unique // One-to-One: 1 user hanya punya 1 aktif keranjang
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  items CartItem[]
+
+  @@map("carts")
+}
+
+model CartItem {
+  id          String   @id @default(cuid())
+  cartId      String
+  productId   String
+  warehouseId String?
+  size        String   @default("ALL")
+  quantity    Int      @default(1) // Jumlah baju yang dimasukkan ke keranjang
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  product     Product  @relation(fields: [productId], references: [id], onDelete: Cascade)
+  cart        Cart     @relation(fields: [cartId], references: [id], onDelete: Cascade)
+
+  @@unique([cartId, productId, size]) // Mencegah duplikasi produk dengan ukuran yang sama
+  @@map("cart_items")
+}
+
+// SISTEM TRANSAKSI & PEMBAYARAN (ORDERS)
+enum OrderStatus {
+  PENDING // Menunggu pembayaran
+  PAID // Sudah dibayar (Dikonfirmasi Webhook Midtrans/Stripe)
+  SHIPPED // Sedang dikirim oleh admin
+  DELIVERED // Sudah diterima pembeli
+  CANCELLED // Dibatalkan/Kedaluwarsa
+  COMPLETED // Pesanan diselesaikan oleh pembeli
+  RETURN_REQUESTED // Pengembalian diajukan
+  RETURNED // Pesanan dikembalikan
+}
+
+model Order {
+  id              String      @id @default(cuid())
+  totalAmount     Int
+  shippingCost    Int         @default(0) // Total keseluruhan biaya ongkir
+  status          OrderStatus @default(PENDING)
+  shippingAddress String      @dbs.Text
+  paymentToken    String?
+  paymentMethod   String?
+  userId          String
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user      User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  items     OrderItem[]
+  shipments OrderShipment[]
+  reviews   ProductReview[]
+
+  @@map("orders")
+}
+
+model OrderShipment {
+  id              String  @id @default(cuid())
+  orderId         String
+  warehouseId     String
+  shippingCourier String // JNE, POS, SICEPAT dll
+  shippingService String // REG, YES, dll
+  shippingCost    Int     @default(0) // Biaya ongkir khusus dari gudang ini
+  trackingNumber  String?
+  status          String  @default("PENDING") // Status pengiriman (PENDING, SHIPPED, dll)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  order     Order       @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  warehouse Warehouse   @relation(fields: [warehouseId], references: [id], onDelete: Restrict)
+  items     OrderItem[]
+
+  @@map("order_shipments")
+}
+
+model OrderItem {
+  id         String @id @default(cuid())
+  orderId    String
+  shipmentId String
+  productId  String
+  size       String @default("ALL")
+  quantity   Int
+  price      Int // Catat harga saat dibeli
+
+  order       Order         @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  shipment    OrderShipment @relation(fields: [shipmentId], references: [id], onDelete: Cascade)
+  product     Product       @relation(fields: [productId], references: [id], onDelete: Restrict)
+  orderReturn OrderReturn?
+
+  @@map("order_items")
+}
+
+model VerificationToken {
+  id        String   @id @default(cuid())
+  email     String
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+
+  @@unique([email, token])
+  @@map("verification_tokens")
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  isRead    Boolean  @default(false)
+  link      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("notifications")
+}
+
+enum ReturnStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+}
+
+model OrderReturn {
+  id              String       @id @default(cuid())
+  orderItemId     String       @unique
+  reason          String       @dbs.Text
+  images          String[]
+  refundMethod    String? // Optional, e.g., "BANK_TRANSFER", "E_WALLET"
+  refundAccount   String
+  shippingCourier String?
+  shippingService String?
+  shippingCost    Int?
+  status          ReturnStatus @default(PENDING)
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  orderItem OrderItem @relation(fields: [orderItemId], references: [id], onDelete: Cascade)
+
+  @@map("order_returns")
+}
+
+model ProductReview {
+  id        String   @id @default(cuid())
+  userId    String
+  productId String
+  orderId   String
+  rating    Int
+  message   String?  @dbs.Text
+  images    String[]
+  createdAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  product Product @relation(fields: [productId], references: [id], onDelete: Cascade)
+  order   Order   @relation(fields: [orderId], references: [id], onDelete: Cascade)
+
+  @@map("product_reviews")
+}
