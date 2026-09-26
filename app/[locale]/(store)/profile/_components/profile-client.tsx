@@ -421,7 +421,7 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
                         <span className="p-1.5 bg-zinc-100 rounded-lg text-zinc-600">
                           {getLabelIcon(addr.label)}
                         </span>
-                        <h3 className="font-bold text-zinc-900 capitalize">{t(`addressLabels.${addr.label}`) || addr.label}</h3>
+                        <h3 className="font-bold text-zinc-900">{t(`addressLabels.${addr.label}`) || addr.label}</h3>
                       </div>
 
                       <div className="space-y-1 text-sm text-zinc-600 mb-4">
