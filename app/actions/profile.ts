@@ -5,7 +5,7 @@ import { authOptions } from "@/app/lib/auth";
 import { z } from "zod";
 import { prisma } from "@/app/lib/db";
 import { revalidatePath } from "next/cache";
-import { getTranslations } from "next-intl/server";
+import { getTranslations, getLocale } from "next-intl/server";
 import { compare, hash } from "bcrypt-ts";
 
 const getAddressSchema = (t: any) => z.object({
