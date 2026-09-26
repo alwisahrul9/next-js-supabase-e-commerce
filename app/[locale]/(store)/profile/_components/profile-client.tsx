@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useActionState, startTransition } from "react";
 import { useTranslations } from "next-intl";
-import { updateProfile, addAddress, updateAddress, deleteAddress, setDefaultAddress, saveAddressAction, updateProfileAction } from "@/app/actions/profile";
+import { deleteAddress, setDefaultAddress, saveAddressAction, updateProfileAction } from "@/app/actions/profile";
 import { toast } from "@/components/ui/toast";
 import { signOut } from "next-auth/react";
 import { Loader2, Plus, MapPin, Building, Home, Navigation, Trash2, Edit2, CheckCircle2, User, Phone, Save, LogOut } from "lucide-react";
@@ -242,9 +242,9 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
   };
 
   const getLabelIcon = (label: string) => {
-    if (label === "rumah") return <Home className="h-4 w-4" />;
-    if (label === "kantor") return <Building className="h-4 w-4" />;
-    if (label === "kos") return <Building className="h-4 w-4" />;
+    if (label === "home") return <Home className="h-4 w-4" />;
+    if (label === "office") return <Building className="h-4 w-4" />;
+    if (label === "apartment") return <Building className="h-4 w-4" />;
     return <MapPin className="h-4 w-4" />;
   };
 

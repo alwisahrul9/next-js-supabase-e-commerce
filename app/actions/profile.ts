@@ -235,6 +235,7 @@ export async function addAddress(data: any) {
 
 export async function updateAddress(addressId: string, data: any) {
   const session = await getServerSession(authOptions);
+
   if (!(session?.user as any)?.id) return { success: false, msg: "server.unauthorized" };
 
   try {
