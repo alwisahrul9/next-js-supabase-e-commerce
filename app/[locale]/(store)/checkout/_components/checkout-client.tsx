@@ -144,7 +144,6 @@ export default function CheckoutClient({
   }, [defaultAddress, warehouseGroups]);
 
   const handlePay = async () => {
-      const locale = useLocale();
     if (!snapLoaded) {
       toast.add({ type: "error", title: t("paymentFailed") });
       return;

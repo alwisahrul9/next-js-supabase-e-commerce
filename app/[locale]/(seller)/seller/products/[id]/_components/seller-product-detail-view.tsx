@@ -115,7 +115,6 @@ export default function SellerProductDetailView({
   };
 
   const handleExecuteArchive = async (id: string) => {
-      const locale = useLocale();
     const res = await archiveProduct(id);
     if (res.success) {
       setIsArchiveModalOpen(false);

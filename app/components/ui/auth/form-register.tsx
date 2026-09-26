@@ -39,7 +39,6 @@ export default function FormRegister({ role }: { role: "buyer" | "seller" }) {
   const password = watch("password");
 
   const onSubmit: SubmitHandler<RegisterFormInputs> = async (data) => {
-      const locale = useLocale();
     setIsLoading(true);
     setServerError(null);
 

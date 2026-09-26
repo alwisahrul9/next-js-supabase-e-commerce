@@ -15,7 +15,6 @@ export default function EditProductPage() {
   const t = useTranslations("EditProduct");
 
   useEffect(() => {
-      const locale = useLocale();
     if (countdown <= 0) {
       router.push(`/${locale}/seller/products`);
       return;

@@ -437,7 +437,6 @@ export default function OnboardingClient({ locale }: { locale: string }) {
   const storeNameValue = watch("storeName");
 
   const onSubmit = async (data: SellerOnboardingInput) => {
-      const locale = useLocale();
     setIsSubmitting(true);
     try {
       let finalLogoUrl = data.logoUrl;

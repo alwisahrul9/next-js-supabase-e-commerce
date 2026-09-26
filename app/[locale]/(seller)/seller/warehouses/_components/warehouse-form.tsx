@@ -150,7 +150,6 @@ export default function WarehouseForm({ initialData, warehouseId }: WarehouseFor
   const isEditMode = !!warehouseId;
 
   const onSubmit = async (data: WarehouseInput) => {
-      const locale = useLocale();
     setIsSubmitting(true);
     try {
       let res;

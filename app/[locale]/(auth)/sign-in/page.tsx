@@ -28,9 +28,9 @@ export async function generateMetadata({
   };
 }
 
-export default function SignInPage() {
-    const locale = useLocale();
-  const t = useTranslations("SignIn");
+export default async function SignInPage({ params }: { params: Promise<{ locale: string }> }) {
+  const { locale } = await params;
+  const t = await getTranslations({ locale, namespace: "SignIn" });
 
   const bgImageUrl =
     "url('https://images.unsplash.com/photo-1441986300917-64674bd600d8?q=80&w=1200&auto=format&fit=crop')";

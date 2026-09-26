@@ -20,7 +20,6 @@ export default function ResetPasswordClient({ token, locale }: { token: string, 
   const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
-      const locale = useLocale();
     e.preventDefault();
     setIsLoading(true);
     setMessage(null);
@@ -37,7 +36,6 @@ export default function ResetPasswordClient({ token, locale }: { token: string, 
       setMessage({ type: "success", text: t("successMessage") });
       // Redirect after 3 seconds
       setTimeout(() => {
-          const locale = useLocale();
         router.push(`/${locale}/sign-in`);
       }, 3000);
     } else {

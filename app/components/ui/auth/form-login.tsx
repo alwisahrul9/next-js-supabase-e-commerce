@@ -67,7 +67,7 @@ export default function FormLogin({ role }: { role: "buyer" | "seller" }) {
   const handleGoogleSignIn = async () => {
     setIsLoading(true);
     const callbackUrl = searchParams.get("callbackUrl") || (role === "buyer" ? "/" : "/seller");
-    
+
     try {
       await signIn("google", { callbackUrl });
     } catch (error) {
@@ -110,9 +110,8 @@ export default function FormLogin({ role }: { role: "buyer" | "seller" }) {
                 message: tAuth("email.invalid"),
               },
             })}
-            className={`bg-zinc-50/50 ${
-              errors.email ? "border-rose-500 focus-visible:ring-rose-500" : ""
-            }`}
+            className={`bg-zinc-50/50 ${errors.email ? "border-rose-500 focus-visible:ring-rose-500" : ""
+              }`}
           />
           {/* Pesan Error Client Realtime */}
           {errors.email && (
@@ -145,11 +144,10 @@ export default function FormLogin({ role }: { role: "buyer" | "seller" }) {
                 message: tAuth("password.minLength", { min: 6 }),
               },
             })}
-            className={`bg-zinc-50/50 ${
-              errors.password
-                ? "border-rose-500 focus-visible:ring-rose-500"
-                : ""
-            }`}
+            className={`bg-zinc-50/50 ${errors.password
+              ? "border-rose-500 focus-visible:ring-rose-500"
+              : ""
+              }`}
           />
           {/* Pesan Error Client Realtime */}
           {errors.password && (
@@ -163,11 +161,10 @@ export default function FormLogin({ role }: { role: "buyer" | "seller" }) {
       <CardFooter className="flex flex-col gap-4 mt-2">
         {/* Tombol Login Utama (Email & Password) */}
         <Button
-          className={`w-full text-white font-medium py-5 ${
-            role === "buyer"
-              ? "bg-zinc-900 hover:bg-zinc-800"
-              : "bg-amber-600 hover:bg-amber-700"
-          }`}
+          className={`w-full text-white font-medium py-5 ${role === "buyer"
+            ? "bg-zinc-900 hover:bg-zinc-800"
+            : "bg-amber-600 hover:bg-amber-700"
+            }`}
           disabled={isLoading}
           type="submit"
         >
@@ -196,11 +193,10 @@ export default function FormLogin({ role }: { role: "buyer" | "seller" }) {
             <Button
               type="button"
               variant="outline"
-              className={`w-full py-5 bg-white font-medium transition-colors ${
-                role === "buyer"
-                  ? "hover:bg-zinc-50 hover:text-zinc-950 border-zinc-200"
-                  : "hover:bg-amber-50/50 hover:text-amber-900 border-zinc-200"
-              }`}
+              className={`w-full py-5 bg-white font-medium transition-colors ${role === "buyer"
+                ? "hover:bg-zinc-50 hover:text-zinc-950 border-zinc-200"
+                : "hover:bg-amber-50/50 hover:text-amber-900 border-zinc-200"
+                }`}
               onClick={handleGoogleSignIn}
               disabled={isLoading}
             >
@@ -231,9 +227,8 @@ export default function FormLogin({ role }: { role: "buyer" | "seller" }) {
             : t("footer.noAccountSeller")}{" "}
           <Link
             href={role === "buyer" ? "/sign-up" : "/sign-up?role=seller"}
-            className={`font-semibold hover:underline ${
-              role === "buyer" ? "text-zinc-900" : "text-amber-700"
-            }`}
+            className={`font-semibold hover:underline ${role === "buyer" ? "text-zinc-900" : "text-amber-700"
+              }`}
           >
             {role === "buyer"
               ? t("footer.registerBuyer")

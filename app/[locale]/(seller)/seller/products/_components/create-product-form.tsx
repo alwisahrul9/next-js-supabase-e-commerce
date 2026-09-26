@@ -117,7 +117,6 @@ export default function CreateProductForm({
   >({});
 
   useEffect(() => {
-      const locale = useLocale();
     if (state.success === true) {
       toast.add({
         type: "success",

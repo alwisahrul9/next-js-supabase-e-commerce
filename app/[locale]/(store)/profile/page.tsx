@@ -1,12 +1,13 @@
 import { getBuyerProfileData } from "@/app/actions/profile";
 import ProfileClient from "./_components/profile-client";
 import { redirect } from "next/navigation";
-import { useLocale } from "next-intl";
 
-;
+interface ProfilePageProps {
+  params: Promise<{ locale: string }>;
+}
 
-export default async function ProfilePage() {
-    const locale = useLocale();
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const { locale } = await params;
   const profileRes = await getBuyerProfileData();
   
   if (!profileRes.success) {
