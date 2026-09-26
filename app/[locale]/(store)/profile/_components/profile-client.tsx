@@ -44,6 +44,10 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
   const [isLoadingVillages, setIsLoadingVillages] = useState(false);
   const [isManualVillage, setIsManualVillage] = useState(false);
 
+  const [isDeleteAddressModalOpen, setIsDeleteAddressModalOpen] = useState(false);
+  const [addressToDeleteId, setAddressToDeleteId] = useState<string | null>(null);
+  const [isDeletingAddress, setIsDeletingAddress] = useState(false);
+
   useEffect(() => {
     if (isAddingAddress && provinces.length === 0) {
       setIsLoadingProvinces(true);
@@ -136,7 +140,7 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
 
   const resetAddressForm = () => {
     setAddressForm({
-      label: "rumah",
+      label: "home",
       receiverName: name,
       receiverPhone: phone,
       province: "",
@@ -207,11 +211,20 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
     });
   };
 
-  const handleDeleteAddress = async (id: string) => {
-    if (!confirm("Hapus alamat ini?")) return;
-    const res = await deleteAddress(id);
+  const openDeleteAddressModal = (id: string) => {
+    setAddressToDeleteId(id);
+    setIsDeleteAddressModalOpen(true);
+  };
+
+  const executeDeleteAddress = async () => {
+    if (!addressToDeleteId) return;
+    setIsDeletingAddress(true);
+    const res = await deleteAddress(addressToDeleteId);
+    setIsDeletingAddress(false);
     if (res.success) {
       toast.add({ type: "success", title: t("addressDeleted") });
+      setIsDeleteAddressModalOpen(false);
+      setAddressToDeleteId(null);
       window.location.reload();
     } else {
       toast.add({ type: "error", title: t("actionFailed") });
@@ -419,10 +432,10 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
 
                       <div className="flex items-center gap-3 pt-3 border-t border-zinc-100">
                         <button onClick={() => handleOpenEditAddress(addr)} className="text-xs font-semibold text-zinc-500 hover:text-zinc-900 transition-colors flex items-center gap-1">
-                          <Edit2 className="h-3.5 w-3.5" /> Edit
+                          <Edit2 className="h-3.5 w-3.5" /> {t("edit")}
                         </button>
-                        <button onClick={() => handleDeleteAddress(addr.id)} className="text-xs font-semibold text-zinc-500 hover:text-red-600 transition-colors flex items-center gap-1">
-                          <Trash2 className="h-3.5 w-3.5" /> Hapus
+                        <button onClick={() => openDeleteAddressModal(addr.id)} className="text-xs font-semibold text-zinc-500 hover:text-red-600 transition-colors flex items-center gap-1">
+                          <Trash2 className="h-3.5 w-3.5" /> {t("delete")}
                         </button>
                         {!addr.isDefault && (
                           <button onClick={() => handleSetPrimary(addr.id)} className="ml-auto text-xs font-bold text-orange-600 hover:text-orange-700 transition-colors">
@@ -434,12 +447,46 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
                   ))}
                 </div>
               )}
+
+              {/* Delete Address Confirmation Modal */}
+              <Dialog open={isDeleteAddressModalOpen} onOpenChange={(open) => {
+                if (!isDeletingAddress) {
+                  setIsDeleteAddressModalOpen(open);
+                  if (!open) setAddressToDeleteId(null);
+                }
+              }}>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>{t("deleteAddress")}</DialogTitle>
+                    <DialogDescription>
+                      {t("deleteAddressConfirm")}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <DialogFooter className="mt-4 gap-2 space-x-3 sm:gap-0">
+                    <button
+                      onClick={() => { setIsDeleteAddressModalOpen(false); setAddressToDeleteId(null); }}
+                      disabled={isDeletingAddress}
+                      className="px-4 py-2 bg-zinc-100 hover:bg-zinc-200 text-zinc-900 rounded-lg text-sm font-semibold transition-colors disabled:opacity-50"
+                    >
+                      {t("cancel")}
+                    </button>
+                    <button
+                      onClick={executeDeleteAddress}
+                      disabled={isDeletingAddress}
+                      className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg text-sm font-semibold transition-colors flex items-center justify-center disabled:opacity-50"
+                    >
+                      {isDeletingAddress ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : null}
+                      {isDeletingAddress ? t("deleting") : t("delete")}
+                    </button>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
             </>
           ) : (
             <form onSubmit={handleSaveAddress} className="bg-white border border-zinc-200 rounded-2xl p-6 space-y-6">
               <div className="flex items-center justify-between border-b border-zinc-100 pb-4">
                 <h2 className="text-lg font-bold text-zinc-900">{editingAddressId ? t("editAddress") : t("addAddress")}</h2>
-                <button type="button" onClick={() => setIsAddingAddress(false)} className="text-sm font-semibold text-zinc-500 hover:text-zinc-900">Batal</button>
+                <button type="button" onClick={() => setIsAddingAddress(false)} className="text-sm font-semibold text-zinc-500 hover:text-zinc-900">{t("cancel")}</button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -450,10 +497,10 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
                     onChange={(e) => setAddressForm({ ...addressForm, label: e.target.value })}
                     className={`w-full px-4 py-2 border rounded-xl text-sm outline-none transition-colors ${saveAddressState?.errors?.label ? 'border-red-500 focus:ring-red-500 bg-red-50/50' : 'border-zinc-200 focus:ring-2 focus:ring-orange-500'}`}
                   >
-                    <option value="rumah">{t("addressLabels.Home")}</option>
-                    <option value="kantor">{t("addressLabels.Office")}</option>
-                    <option value="kos">{t("addressLabels.Apartment")}</option>
-                    <option value="other">{t("addressLabels.Other")}</option>
+                    <option value="home">{t("addressLabels.home")}</option>
+                    <option value="office">{t("addressLabels.office")}</option>
+                    <option value="apartment">{t("addressLabels.apartment")}</option>
+                    <option value="other">{t("addressLabels.other")}</option>
                   </select>
                   {saveAddressState?.errors?.label && <p className="text-xs text-red-500">{saveAddressState.errors.label[0]}</p>}
                 </div>
@@ -539,7 +586,7 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
                     })}
                     className={`w-full px-4 py-2 border rounded-xl text-sm outline-none transition-colors ${saveAddressState?.errors?.province ? 'border-red-500 focus:ring-red-500 bg-red-50/50' : 'border-zinc-200 focus:ring-2 focus:ring-orange-500'}`}
                   >
-                    <option value="">-- Pilih Provinsi --</option>
+                    <option value="">{t("selectProvince")}</option>
                     {provinces.map((prov, index) => (
                       <option key={index} value={prov.name || prov.province}>{prov.name || prov.province}</option>
                     ))}
@@ -569,7 +616,7 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
                     }}
                     className={`w-full px-4 py-2 border rounded-xl text-sm outline-none transition-colors ${saveAddressState?.errors?.cityId ? 'border-red-500 focus:ring-red-500 bg-red-50/50' : 'border-zinc-200 focus:ring-2 focus:ring-orange-500'}`}
                   >
-                    <option value="">-- Pilih Kota/Kabupaten --</option>
+                    <option value="">{t("selectCity")}</option>
                     {cities.map((city, index) => (
                       <option key={index} value={city.id || city.city_id}>
                         {city.name || `${city.type} ${city.city_name}`}
@@ -605,7 +652,7 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
                     }}
                     className={`w-full px-4 py-2 border rounded-xl text-sm outline-none transition-colors ${saveAddressState?.errors?.district ? 'border-red-500 focus:ring-red-500 bg-red-50/50' : 'border-zinc-200 focus:ring-2 focus:ring-orange-500'}`}
                   >
-                    <option value="">-- Pilih Kecamatan --</option>
+                    <option value="">{t("selectDistrict")}</option>
                     {districts.map((dist, index) => (
                       <option key={index} value={dist.id || dist.subdistrict_id}>
                         {dist.name || dist.subdistrict_name}
@@ -653,7 +700,7 @@ export default function ProfileClient({ initialData }: { initialData: any }) {
                       }}
                       className={`w-full px-4 py-2 border rounded-xl text-sm outline-none transition-colors ${saveAddressState?.errors?.village ? 'border-red-500 focus:ring-red-500 bg-red-50/50' : 'border-zinc-200 focus:ring-2 focus:ring-orange-500'}`}
                     >
-                      <option value="">-- Pilih Desa/Kelurahan --</option>
+                      <option value="">{t("selectVillage")}</option>
                       {villages.map((vil, index) => (
                         <option key={index} value={vil.id}>
                           {vil.name}

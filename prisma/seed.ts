@@ -277,8 +277,8 @@ async function main() {
   console.log("👥 Membuat 50 akun Buyer beserta alamat, cart, dan orders variatif...");
 
   const orderStatuses: OrderStatus[] = [
-    OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.SHIPPED, 
-    OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.COMPLETED, 
+    OrderStatus.PENDING, OrderStatus.PAID, OrderStatus.SHIPPED,
+    OrderStatus.DELIVERED, OrderStatus.COMPLETED, OrderStatus.COMPLETED,
     OrderStatus.COMPLETED, OrderStatus.CANCELLED, OrderStatus.RETURN_REQUESTED, OrderStatus.RETURNED
   ];
   const couriers = ["jne", "sicepat", "pos", "jnt"];
@@ -302,7 +302,7 @@ async function main() {
             addresses: {
               create: [
                 {
-                  label: "Home",
+                  label: "home",
                   receiverName: `Pembeli Setia ${i}`,
                   receiverPhone: `081234567${String(i).padStart(3, '0')}`,
                   province: "JAWA BARAT",
