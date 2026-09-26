@@ -4,7 +4,7 @@ import OrderDetailClient from "./_components/order-detail-client";
 import { useLocale } from "next-intl";
 
 export default async function SellerOrderDetailPage({ params }: { params: Promise<{ locale: string; id: string }> }) {
-  const { id } = await params;
+  const { id, locale } = await params;
 
   const res = await getSellerOrderDetail(id);
 

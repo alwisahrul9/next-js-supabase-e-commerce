@@ -18,18 +18,19 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function EmployeesSettingsPage({
   params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user || (session.user as any).role !== "SELLER") {
-    redirect(`/${params.locale}/login`);
+    redirect(`/${locale}/login`);
   }
 
   const storeProfileId = (session.user as any).storeProfile?.id;
 
   if (!storeProfileId) {
-    redirect(`/${params.locale}/login`);
+    redirect(`/${locale}/login`);
   }
 
   // Fetch employees for this store

@@ -18,12 +18,13 @@ export async function generateMetadata({ params }: { params: Promise<{ locale: s
 export default async function SellerSettingsPage({
   params,
 }: {
-  params: { locale: string };
+  params: Promise<{ locale: string }>;
 }) {
+  const { locale } = await params;
   const session = await getServerSession(authOptions);
 
   if (!session || !session.user || (session.user as any).role !== "SELLER") {
-    redirect(`/${params.locale}/login`);
+    redirect(`/${locale}/login`);
   }
 
   const userId = (session.user as any).id;
@@ -35,7 +36,7 @@ export default async function SellerSettingsPage({
   });
 
   if (!user) {
-    redirect(`/${params.locale}/login`);
+    redirect(`/${locale}/login`);
   }
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || "";
