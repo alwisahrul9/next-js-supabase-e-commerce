@@ -117,11 +117,21 @@ export default async function SignInPage({ params }: { params: Promise<{ locale:
                 {/* FORM PEMBELI */}
                 <TabsContent value="buyer" className="space-y-4">
                   <FormLogin role="buyer" />
+                  <div className="mt-4 p-3 bg-zinc-50 border border-zinc-100 rounded-lg text-sm text-zinc-600 text-center">
+                    <p className="font-semibold mb-1 text-zinc-900">{t("tabs.demoBuyer")}</p>
+                    <p>Email: <span className="font-mono text-zinc-900 font-medium">buyer1@email.com</span></p>
+                    <p>Password: <span className="font-mono text-zinc-900 font-medium">123456</span></p>
+                  </div>
                 </TabsContent>
 
                 {/* FORM PENJUAL */}
                 <TabsContent value="seller" className="space-y-4">
                   <FormLogin role="seller" />
+                  <div className="mt-4 p-3 bg-zinc-50 border border-zinc-100 rounded-lg text-sm text-zinc-600 text-center">
+                    <p className="font-semibold mb-1 text-zinc-900">{t("tabs.demoSeller")}</p>
+                    <p>Email: <span className="font-mono text-zinc-900 font-medium">seller1@email.com</span></p>
+                    <p>Password: <span className="font-mono text-zinc-900 font-medium">123456</span></p>
+                  </div>
                 </TabsContent>
               </Tabs>
             </CardContent>

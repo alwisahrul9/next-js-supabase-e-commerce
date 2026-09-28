@@ -10,6 +10,8 @@
     },
     "tabs": {
       "buyer": "Start Shopping",
+      "demoBuyer": "Buyer Demo Account",
+      "demoSeller": "Seller Demo Account",
       "seller": "Start Selling"
     },
     "form": {

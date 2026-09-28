@@ -10,6 +10,8 @@
     },
     "tabs": {
       "buyer": "Mulai Belanja",
+      "demoBuyer": "Akun Demo Pembeli",
+      "demoSeller": "Akun Demo Penjual",
       "seller": "Mulai Jualan"
     },
     "form": {
